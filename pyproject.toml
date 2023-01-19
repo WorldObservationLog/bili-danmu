@@ -5,7 +5,7 @@ description = "A modern library for receiving bdanmu ofrom bilibili livestream"
 authors = ["WorldObservationLog <wolc@duck.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "bili_danmu"}]
+packages = [{include = "src/danmu"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
