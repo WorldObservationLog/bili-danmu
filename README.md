@@ -23,3 +23,17 @@ async def on_danmu(danmu: dict):
 
 dmc.run(loop)
 ```
+
+# Special Thanks
+
+This project refers to some other projects. Sincerely appreciate their developers.
+
+- [Code4Epoch/Bolaris](https://github.com/Code4Epoch/Bolaris) Give me the infomation of v3 protocol
+
+- [qydysky/bili_danmu](https://github.com/qydysky/bili_danmu) A full list of CMD in danmu pack's body
+
+- [littlecodersh/danmu](https://github.com/littlecodersh/danmu) A very old danmu library. Inspire me to use callback design
+
+- [yjqiang/danmu](https://github.com/yjqiang/danmu) Main reference 
+
+- [yangjunlong/barrager.js](https://github.com/yangjunlong/barrager.js) A protocol document and code implement
