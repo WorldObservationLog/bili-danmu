@@ -10,7 +10,7 @@ from .pack import Pack, RawDanmu, WSConstants
 class DanmuClient:
     roomId: int
     ws: websockets.WebSocketClientProtocol
-    _handler: Dict[int, Callable[[Danmu | RawDanmu], Awaitable[None]]] ={}
+    _handler: Dict[int, Callable[[dict | RawDanmu], Awaitable[None]]] ={}
     api = "wss://broadcastlv.chat.bilibili.com:443/sub"
     heartbeat = 30.0
 
@@ -52,7 +52,7 @@ class DanmuClient:
         else:
             await self._handler[0](rawDanmu)
     
-    async def default_handler(self, danmu: Danmu | RawDanmu) -> None:
+    async def default_handler(self, danmu: dict | RawDanmu) -> None:
         pass
 
     def on_danmu(self, fn: Callable[[dict], Awaitable[None]]):
