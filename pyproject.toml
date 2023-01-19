@@ -1,11 +1,12 @@
 [tool.poetry]
 name = "bili-danmu"
 version = "0.1.2"
-description = "A modern library for receiving bdanmu ofrom bilibili livestream"
+description = "A modern library for receiving bdanmu from bilibili livestream"
 authors = ["WorldObservationLog <wolc@duck.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "danmu"}]
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -15,3 +16,6 @@ websockets = "^10.4"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.urls]
+"GitHub" = "https://github.com/WorldObservationLog/bili-danmu"
