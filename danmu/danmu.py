@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, Callable, Awaitable
 import websockets
 import json
-import zlib
+import brotli
 from .pack import Pack, RawDanmu, WSConstants
 
 
@@ -24,7 +24,7 @@ class DanmuClient:
 
     async def send_auth(self):
         auth_params = {"uid": 1, "roomid": self.roomId, 
-                       "protover": 2, "platform": "web", "clientver": "1.7.3"}
+                       "protover": 3, "platform": "web", "clientver": "1.7.3"}
         return await self.ws.send(Pack.pack_string(json.dumps(auth_params), WSConstants.WS_OP_USER_AUTHENTICATION))
     
     async def send_heartbeat(self):
@@ -35,8 +35,8 @@ class DanmuClient:
             return None
         header = Pack.unpack_header(packs)
         body = packs[header.headerLength:]
-        if header.protocolVersion == 2 and header.operation == WSConstants.WS_OP_MESSAGE:
-           packs = zlib.decompress(body)
+        if header.protocolVersion == 3 and header.operation == WSConstants.WS_OP_MESSAGE:
+           packs = brotli.decompress(body)
            for raw in Pack.unpack_string(packs):
                 await self.parse_body(raw)
         else: 
