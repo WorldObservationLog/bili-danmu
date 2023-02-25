@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bili-danmu"
-version = "0.2.0"
+version = "0.2.5"
 description = "A modern library for receiving danmu from bilibili livestream"
 authors = ["WorldObservationLog <wolc@duck.com>"]
 license = "MIT"

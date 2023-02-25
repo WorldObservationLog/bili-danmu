@@ -1,6 +1,7 @@
 import asyncio
 from dataclasses import dataclass
 from typing import Dict, Callable, Awaitable
+from asyncio.base_events import functools
 import websockets
 import json
 import brotli
@@ -10,7 +11,7 @@ from .pack import Pack, RawDanmu, WSConstants
 class DanmuClient:
     roomId: int
     ws: websockets.WebSocketClientProtocol
-    _handler: Dict[int, Callable[[dict | RawDanmu], Awaitable[None]]] ={}
+    _handler: Dict[int, Callable[[int, dict | RawDanmu], Awaitable[None]]] ={}
     api = "wss://broadcastlv.chat.bilibili.com:443/sub"
     heartbeat = 30.0
 
@@ -28,7 +29,8 @@ class DanmuClient:
         return await self.ws.send(Pack.pack_string(json.dumps(auth_params), WSConstants.WS_OP_USER_AUTHENTICATION))
     
     async def send_heartbeat(self):
-       return await self.ws.send(self.heartbeat_pack)
+        if self.ws.open:
+            return await self.ws.send(self.heartbeat_pack)
 
     async def handle_packs(self, packs: bytes):
         if not packs:
@@ -46,24 +48,24 @@ class DanmuClient:
     async def parse_body(self, rawDanmu: RawDanmu):
         opt = rawDanmu.header.operation
         if opt == WSConstants.WS_OP_MESSAGE:
-            await self._handler[WSConstants.WS_OP_MESSAGE](json.loads(rawDanmu.body.decode("utf-8")))
+            await self._handler[WSConstants.WS_OP_MESSAGE](self.roomId, json.loads(rawDanmu.body.decode("utf-8")))
         elif opt == WSConstants.WS_OP_HEARTBEAT_REPLY:
-            await self._handler[WSConstants.WS_OP_HEARTBEAT_REPLY](rawDanmu)
+            await self._handler[WSConstants.WS_OP_HEARTBEAT_REPLY](self.roomId, rawDanmu)
         else:
-            await self._handler[0](rawDanmu)
+            await self._handler[0](self.roomId, rawDanmu)
     
-    async def default_handler(self, danmu: dict | RawDanmu) -> None:
+    async def default_handler(self, room_id: int, danmu: dict | RawDanmu) -> None:
         pass
 
-    def on_danmu(self, fn: Callable[[dict], Awaitable[None]]):
+    def on_danmu(self, fn: Callable[[int, dict], Awaitable[None]]):
         self._handler[WSConstants.WS_OP_MESSAGE] = fn
         return fn
 
-    def on_unknown(self, fn: Callable[[RawDanmu], Awaitable[None]]):
+    def on_unknown(self, fn: Callable[[int, RawDanmu], Awaitable[None]]):
         self._handler[0] = fn
         return fn
 
-    def on_heartbeat(self, fn: Callable[[RawDanmu], Awaitable[None]]):
+    def on_heartbeat(self, fn: Callable[[int, RawDanmu], Awaitable[None]]):
         # watching_num = struct.unpack("!I", rawDanmu.body)
         self._handler[WSConstants.WS_OP_HEARTBEAT_REPLY] = fn
         return fn
@@ -76,19 +78,31 @@ class DanmuClient:
         except asyncio.CancelledError:
             return
 
-    def run(self, loop: asyncio.AbstractEventLoop, block: bool = True):
+    def run(self, loop: asyncio.AbstractEventLoop):
         async def init_client():
             self.ws = await websockets.connect(self.api, ssl=True)
-        loop.run_until_complete(init_client())
-        loop.run_until_complete(self.send_auth())
-        loop.create_task(self.job_send_heartbeat())
+            await self.send_auth()
+            loop.create_task(self.job_send_heartbeat())
         async def receive_packs():
             async for packs in self.ws:
                 try:
                     await self.handle_packs(packs)
                 except websockets.ConnectionClosed:
                     continue
-        if block:
-            loop.run_until_complete(receive_packs())
-        else:
-            loop.create_task(receive_packs())
+
+        async def start_client():
+            while True:
+                try:
+                    await receive_packs()
+                except websockets.ConnectionClosed:
+                    await self.ws.close()
+                    self.ws = await websockets.connect(self.api, ssl=True)
+                    await self.send_auth()
+                    continue
+
+        def start(*arg):
+            loop.create_task(start_client())
+
+        loop.create_task(init_client()).add_done_callback(start)
+
+

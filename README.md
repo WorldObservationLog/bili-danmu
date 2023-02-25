@@ -18,10 +18,11 @@ loop = asyncio.new_event_loop()
 dmc = DanmuClient(25512465)
 
 @dmc.on_danmu
-async def on_danmu(danmu: dict):
+async def on_danmu(room_id: int, danmu: dict):
     print(danmu)
 
 dmc.run(loop)
+loop.run_forever()
 ```
 
 # Special Thanks
